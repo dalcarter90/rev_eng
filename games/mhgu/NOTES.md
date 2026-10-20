@@ -63,6 +63,33 @@ dump. They haven't been checked yet.
   on it) and N64Recomp.
 - Renderer target:
 
+## First target: Legion Go 2 (Windows and Linux)
+- Hardware: AMD Ryzen Z2 Extreme or Z1 Extreme (x86-64, Zen 5 / Zen 4),
+  RDNA 3.5 GPU, 8.8" 1920x1200 (16:10) OLED up to 144 Hz **(verify for
+  my unit)**.
+- CPU: x86-64, so the x86 translation hazards apply (division by zero,
+  shift masking, FMA, NaN, float modes). Build for `x86-64-v3`, which
+  covers the Go 2 and any recent PC and gives hardware FMA.
+- Graphics: Vulkan is first-class on both Windows (AMD driver) and Linux
+  (Mesa RADV), so one Vulkan backend covers both: SDL_GPU, or Vulkan
+  directly. Translate the Maxwell shaders to SPIR-V.
+- Frame rate: MHGU runs at 30 fps, and game logic is probably tied to the
+  frame **(verify)**. Ship locked at 30 first. Higher frame rates need
+  logic decoupled from rendering, which comes later.
+- Aspect ratio: the Switch renders 16:9 and the Go 2 is 16:10. Start with
+  letterboxing, and extend the camera and UI later.
+- Input: use the SDL3 gamepad API. The Go 2 controllers appear as a
+  standard gamepad (Legion Space on Windows; Steam Input or Handheld Daemon
+  on Linux). Make the Nintendo A/B and X/Y swap a setting.
+- Linux packaging: build inside the Steam Runtime (sniper) container and
+  ship an AppImage or tarball that can be added to Steam as a non-Steam
+  game. That covers SteamOS, Bazzite and CachyOS handheld installs.
+- Build on a desktop, not the Go 2. Split the generated C across many
+  files, use ccache or sccache, and build with `-O1` during development.
+- Later idea: the 3DS version showed the map and item menus on a second
+  screen. The dual-screen mount from the 3d_printing repo could bring that
+  back as a second-window mode.
+
 ## iPad / iOS notes
 - The generated C is the same for every platform. On iPad, Clang compiles
   it to ARM64 ahead of time, and the app is signed normally. No JIT is
