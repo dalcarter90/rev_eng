@@ -1,0 +1,13 @@
+# Never commit original game files or analysis databases
+*.exe
+*.dll
+*.pdb
+*.so
+*.apk
+*.ipa
+*.pak
+*.pck
+*.gpr
+*.rep/
+games/*/assets/
+games/*/original/
