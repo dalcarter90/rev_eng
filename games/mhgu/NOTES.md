@@ -76,16 +76,31 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
 - Progress:
   1. Done: extracted the game data, with the 1.4.0 update applied.
   2. Done: identified `subsdk0` (movie player).
-  3. In progress: prototype the translator and check it against Ghidra's
-     emulator. Status (2026-10-20), on a 2,000-function sample:
-     - 1,964 match exactly;
-     - 2 differ because Ghidra's emulator is wrong (division by zero);
-     - 20 time out on random inputs, so they're untested;
-     - 14 show small memory differences, still to trace.
+  3. In progress: prototype the translator. Status (2026-10-20), on a
+     2,000-function sample with random inputs:
+     - **C matches Unicorn (QEMU ARM) on 1,974 functions.** The rest are
+       inconclusive: Unicorn can't map the top page (`0xFFFFF000`) or
+       faults on misaligned exclusive loads, both caused by garbage
+       pointers, plus timeouts.
+     - The independent Unicorn reference exposed Sleigh errors that the
+       Ghidra emulator shares:
+       - `vcmp` sets C wrongly for unordered (NaN) compares. ARM sets
+         C = !(a < b).
+       - NaN priority and sign in `vmls`/`vnmls` differ from ARM's
+         pseudocode.
+       - 9 of the original 14 "C bugs" were Ghidra emulator errors.
+       The translator now patches these per mnemonic.
+     - NEON `vmax`/`vmin`/`vmaxnm`/`vminnm` lanes now flush to zero and use
+       the default NaN, with ARM's signed-zero rules. Unhandled forms (Q
+       registers, f16) raise `Unsupported`.
+     - 186 tail branches in 183 functions land in non-entry code (shared
+       epilogues). They're logged to `tails_nonentry.txt` and excluded for
+       now. They need a translation strategy before step 4.
+     - Tools: `unicorn_ref.py`, `compare.py`, `group_diffs.py`, and
+       `harness.c` with `RT_DEBUG` traces and dumps.
      Design and commands: `C:\rea-work\mhgu\recomp\README.md`. The test
-     harness is Windows-only (it uses a Windows feature to track memory
-     writes). Verification stays on Windows; the game builds for both
-     systems.
+     harness is Windows-only, so verification stays on Windows; the game
+     builds for both systems.
   4. Next: the recompiled game boots in a stub runtime and logs its way to
      the first graphics call.
 - Reference projects: XenonRecomp (and Unleashed Recompiled, which is built
