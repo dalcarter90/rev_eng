@@ -227,6 +227,34 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
   screen. The dual-screen mount from the 3d_printing repo could bring that
   back as a second-window mode.
 
+## Later: resolution and frame rate
+Do these after the game runs as-is, but keep them possible from the start:
+- Build the renderer so that every render target is created through one
+  function with a resolution scale factor. Don't assume 16:9 anywhere.
+- Keep frame pacing (present, vsync, frame timer) inside the runtime.
+- During step 4, log NVN render-target sizes, and find how the game reads
+  time and vsync (`nn::os` ticks, `nn::vi` vsync events). Those are the
+  hooks for both features.
+
+Resolution (moderate effort): scale the render targets the game asks for,
+the way emulators do. Watch for:
+- post effects that assume pixel sizes (blur, bloom, depth of field,
+  ambient occlusion);
+- UI drawn in fixed pixels;
+- shadow maps, which should be scaled separately;
+- texel offsets passed in constant buffers (the MFX metadata lists them).
+
+Frame rate (harder): the game runs at 30 fps, and its logic (animation,
+physics, timers) probably counts frames **(verify)**. In rising order of
+effort:
+1. Driver frame generation (AMD Fluid Motion Frames on the Go 2). No game
+   changes, but it adds latency.
+2. Find the game's timestep or frame-rate setting. Check existing 60 fps
+   patches from the emulator community, if any, since they show which
+   values to change. Then fix whatever runs at double speed.
+3. Run logic at 30 Hz and interpolate rendering between logic ticks. This
+   is the smoothest result and the most engine work.
+
 ## Later: Android and iPad
 - The generated C and the 4 GB `MEM()` model carry over unchanged to
   ARM64.
