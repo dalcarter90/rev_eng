@@ -78,10 +78,16 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
   2. Done: identified `subsdk0` (movie player).
   3. In progress: prototype the translator. Status (2026-10-20), on a
      2,000-function sample with random inputs:
-     - **C matches Unicorn (QEMU ARM) on 1,974 functions.** The rest are
-       inconclusive: Unicorn can't map the top page (`0xFFFFF000`) or
-       faults on misaligned exclusive loads, both caused by garbage
-       pointers, plus timeouts.
+     - **C matches Unicorn (QEMU ARM) on 1,979 functions, with 0
+       mismatches.** Unicorn is now the primary reference and Ghidra's
+       emulator the secondary one.
+     - 21 functions are inconclusive. Unicorn can't map the top page
+       (`0xFFFFF000`) and faults on misaligned exclusive loads, both only
+       with garbage pointers. The other 19 are circular linked-list walks,
+       mostly one container library around `0x6139xxxx`. They never end on
+       random memory, even at 2 M steps with the "real" input profile
+       (`RT_INPUTS=real`). They need inputs recorded from the running
+       game.
      - The independent Unicorn reference exposed Sleigh errors that the
        Ghidra emulator shares:
        - `vcmp` sets C wrongly for unordered (NaN) compares. ARM sets
@@ -160,11 +166,18 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
 - Graphics: one Vulkan backend (SDL_GPU, or Vulkan directly) covers both
   Windows (AMD driver) and Linux (Mesa RADV). The runtime supplies its own
   NVN function table, using the 478 names in `nvn_procs.txt`.
-- Shaders: `system\app_shader\AppShaderPackage.mfx` (1.3 MB, MT
-  Framework MFX v0x35) holds every shader, and the engine looks them up by
-  name. Expected contents, not yet parsed: a table of shader names,
-  techniques and passes; vertex and constant-buffer layouts; and compiled
-  Maxwell code. Plan: translate the shaders to SPIR-V once, ahead of time,
+- Shaders:
+  - `system\app_shader\AppShaderPackage.mfx` (1.3 MB, MFX v0x35) is
+    **metadata only**. It has 2,862 named entries:
+    - 1,773 shader functions, 249 passes and 68 techniques;
+    - 166 constant buffers and 161 texture slots;
+    - blend, depth and raster states, plus a string table.
+    Names like `$Globals` suggest the source is HLSL.
+  - There's no Maxwell code or NVN shader header in the MFX or in `main`.
+  - The executable also loads `system\shader\ShaderPackage`, which isn't
+    a loose file, so it's probably inside an `.arc`. It goes with the
+    `mpShaderArchive`, `nNX::ShaderBinary` and `rShader2` resources, and
+    the compiled shaders are most likely there. Plan: translate the shaders to SPIR-V once, ahead of time,
   so there's no runtime stutter. Some Maxwell shaders may need variants
   per pipeline state (texture types, vertex formats), which is why
   emulators translate at runtime. Emulator shader recompilers are a
@@ -200,8 +213,9 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
   mappings independent of the host page size.
 
 ## Open questions
-- `AppShaderPackage.mfx`: confirm the expected layout and whether the
-  code is raw Maxwell or wrapped in NVN shader headers. Count the shaders.
+- Where is `system\shader\ShaderPackage`, and are its shaders raw
+  Maxwell, NVN shader binaries, or something else?
+- Does the game write FPSCR (`vmsr`)? In which mode does it run (FZ/DN)?
 - Does any code in `main` rely on unaligned access or on SWP/SWPB (old
   atomics)?
 - How many threads does the game create, and which `nn::os`
