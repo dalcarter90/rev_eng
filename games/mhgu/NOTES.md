@@ -104,6 +104,33 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
        now. They need a translation strategy before step 4.
      - Tools: `unicorn_ref.py`, `compare.py`, `group_diffs.py`, and
        `harness.c` with `RT_DEBUG` traces and dumps.
+     Full-program status (2026-10-20, later):
+     - Export: 42,318 of 43,754 functions (everything except imports and
+       Ghidra's external placeholders; 840 MB of p-code). An exporter bug
+       had capped functions at 300 instructions, and internal thunks were
+       mislabeled as imports. Both are fixed.
+     - Translation: 42,547 functions, including 236 extra entry points for
+       shared code. There are 7 failures: 3 were f64 `vsel`/`vrint` (now
+       fixed) and 4 need 128-bit NEON. 90 shared-code branches in 21
+       functions are still unresolved.
+     - The whole translation compiles: 43 files plus the function table.
+       Files with huge functions (up to 18,000 instructions) need fewer
+       parallel compile jobs to avoid running out of memory.
+     - Register jumps: switch tables become `goto`s. A jump to the LR the
+       function was entered with is a return. Anything else is a tail call
+       through the function table (`rt_jump`).
+     - FPSCR: `main` never writes it (no `vmsr` in `.text`). The FZ/DN mode
+       is a compile-time setting (`RT_FPSCR`), and both modes are tested.
+       Which mode the Switch actually uses is still open.
+     - Coverage on the 2,070-function sample: 1,450 functions at 90% or
+       more, and 302 below 50% (not verified by a match alone). The sample
+       includes 68 switch-table functions, 180 with indirect calls and 24
+       over 300 instructions.
+     - Harness: reserves 4 GB and commits pages when first touched, runs on
+       a 1 GB stack thread, and stops a trial at a stack-depth guard
+       (`DEPTH`, counted inconclusive).
+     - Blocked until the SDK layer exists: functions that call `nn::`/libc
+       imports.
      Design and commands: `C:\rea-work\mhgu\recomp\README.md`. The test
      harness is Windows-only, so verification stays on Windows; the game
      builds for both systems.
@@ -215,7 +242,10 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
 ## Open questions
 - Where is `system\shader\ShaderPackage`, and are its shaders raw
   Maxwell, NVN shader binaries, or something else?
-- Does the game write FPSCR (`vmsr`)? In which mode does it run (FZ/DN)?
+- `main` never writes FPSCR. Do `sdk` or `rtld` set FZ/DN at thread start?
+  Check for `vmsr` in those modules too.
+- Does the game switch stacks or contexts (fibers, `setjmp`/`longjmp`, a job
+  system)? Turning guest calls into host calls assumes it doesn't.
 - Does any code in `main` rely on unaligned access or on SWP/SWPB (old
   atomics)?
 - How many threads does the game create, and which `nn::os`
