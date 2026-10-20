@@ -231,6 +231,45 @@ These cause most of the bugs when a 32-bit game moves to 64-bit or ARM:
 
 ---
 
+## Console games (Switch, 3DS)
+
+The stages are the same, with these differences:
+
+- **Getting the files.** Dump the game and the keys needed to decrypt it
+  from **your own console**. Never commit the dump or the keys, and never
+  download either. The main code is in `exefs/` (`main`, plus `subsdk*`
+  and `sdk`), and the assets are in `romfs/`.
+- **Binary format.** Switch code is NSO, not PE. REA's Ghidra provider on
+  Windows only reads PE, so either:
+  - convert `main` to ELF (for example with `nx2elf`) and run REA in WSL
+    or on Linux; or
+  - open it in the Ghidra GUI with a Switch loader extension, and use REA
+    on the exported or converted file.
+  Check which of these REA handles before committing to one.
+- **Free names at the platform boundary.** A Switch `main` calls the
+  Nintendo SDK (`nn::fs`, `nn::hid`, `nn::os`, audio, NVN graphics) through
+  dynamic imports with mangled C++ names. The whole platform boundary
+  (Stage 2, step 1) is therefore already named. Demangle it and group it
+  by subsystem.
+- **CPU.** Switch games are ARM: AArch64, or 32-bit ARMv7 for some titles.
+  The 64-bit gotchas above still apply to a 32-bit title. x87 doesn't,
+  but ARM float behavior (flush-to-zero, NEON) can differ from x86.
+- **Graphics.** NVN is Nintendo's own API. Map it onto your renderer
+  abstraction, the same way as Direct3D in Stage 5.
+- **Reference runtime.** There's no original PC binary to hook into, so
+  the incremental-replacement strategy (Stage 3) doesn't apply directly.
+  Use an emulator as the reference instead. One with a GDB stub can be
+  driven by REA's `start_gdb_session` for differential testing: run the
+  same inputs in the emulator and in your build, then compare state.
+- **Already playable through emulation?** Usually yes on Windows, Linux
+  and Android. A native port is most valuable where emulation is weak:
+  iOS/iPad (no JIT), low-end phones, and performance or mod support.
+- **Legal.** Console makers enforce aggressively. Keep the work private.
+  Never publish keys, dumps or assets, and treat publishing decompiled
+  code as a serious risk.
+
+---
+
 ## REA and Ghidra notes
 
 - REA's Ghidra provider on Windows only reads **PE** files (`.exe` and
