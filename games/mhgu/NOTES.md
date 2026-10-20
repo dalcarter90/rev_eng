@@ -26,8 +26,8 @@ dump. They haven't been checked yet.
 ## Stage 1: triage
 - Engine: Capcom MT Framework (the Mobile branch, carried over from the
   3DS version) **(verify)**
-- CPU: 32-bit ARM, per my own check. Record the exact evidence (NSO
-  header, instruction set):
+- CPU: unconfirmed, see open questions. Record the evidence (npdm flags,
+  Ghidra language):
 - Graphics: NVN **(verify)**
 - Audio:
 - Assets: MT Framework `.arc` archives in `romfs/` **(verify)**
@@ -47,14 +47,25 @@ dump. They haven't been checked yet.
 - Statically linked libraries:
 
 ## Decisions
-- Strategy: undecided. A full functional decompilation of MHGU is a
-  multi-year project. Planned milestones, each useful by itself:
-  1. Format tools: `.arc` extraction, then textures, models, quests, saves.
-  2. A standalone SDL3 viewer that renders a model with its animations.
-  3. Reimplement subsystems against the emulator as the reference
-     (`start_gdb_session` for differential testing).
+- Strategy: **static recompilation.** Translate all 43,754 functions in
+  `main` to C, build for Windows, and provide a runtime for the Switch side
+  (memory, threads, `nn::` services, NVN graphics, shaders).
+- Progress:
+  1. Done: extracted the game data, with the 1.4.0 update's data patch
+     applied over the base files.
+  2. Done: identified `subsdk0`.
+  3. In progress: prototype the translator on a few hundred functions and
+     check it against Ghidra's emulator. This settles register state, the
+     memory model and the call table.
+  4. Next: the recompiled game boots in a stub runtime and logs its way to
+     the first graphics call.
+- Reference projects: XenonRecomp (and Unleashed Recompiled, which is built
+  on it) and N64Recomp.
 - Renderer target:
 
 ## Open questions
-- Is `main` fully 32-bit, or are any `subsdk` modules 64-bit?
+- **32-bit or 64-bit? Settle this before the translator grows.** Check
+  `exefs/main.npdm` (the 64-bit instruction flag and the address space
+  type) and the language Ghidra loaded `main` as (`AARCH64` or `ARM:32`).
+  The earlier "32-bit" note is unconfirmed.
 - Can REA load the NSO directly, or does it need converting to ELF first?

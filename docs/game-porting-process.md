@@ -117,6 +117,7 @@ calls a platform API are named, and every function is classified as
 | **Incremental replacement (recommended)** | Build a DLL that is injected into the original exe and replaces functions one at a time with your C/C++ code. The game keeps running the whole time, so each replaced function is tested in the real game straight away. Once everything is replaced, the original exe is no longer needed. | The default for custom C/C++ games. This is how projects like OpenRCT2 and re3 got started. |
 | Matching decompilation | Write C so that compiling it reproduces the original bytes exactly, using the same compiler version. | You want byte-level proof of correctness, and you can find the original compiler. It's slow. |
 | Clean reimplementation | Use the decompilation only as a reference and write a new engine that reads the original data files. | The original code is a mess, or you want a cleaner legal position (a "clean-room" approach). |
+| **Static recompilation** | Translate every machine-code function into C automatically, compile it for the new platform, and write a runtime that replaces the original system (memory, threads, files, input, graphics). XenonRecomp (Xbox 360) and N64Recomp work this way. | Console games, and any game too large to decompile by hand. You get a playable port long before anything is understood, and you can then replace generated functions with readable code one at a time. |
 | Emulation (Box64, Winlator, Wine) | Run the original x86 binary on ARM. | A stopgap only. It isn't a port, and it doesn't work on iOS. |
 
 ---
