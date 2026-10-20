@@ -11,3 +11,17 @@
 *.rep/
 games/*/assets/
 games/*/original/
+
+# Switch dumps, keys and extracted content
+*.keys
+*.nsp
+*.nsz
+*.xci
+*.nca
+*.tik
+*.cert
+*.npdm
+*.nso
+**/exefs/
+**/romfs/
+**/keys/

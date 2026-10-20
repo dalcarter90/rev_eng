@@ -240,21 +240,22 @@ The stages are the same, with these differences:
   from **your own console**. Never commit the dump or the keys, and never
   download either. The main code is in `exefs/` (`main`, plus `subsdk*`
   and `sdk`), and the assets are in `romfs/`.
-- **Binary format.** Switch code is NSO, not PE. REA's Ghidra provider on
-  Windows only reads PE, so either:
-  - convert `main` to ELF (for example with `nx2elf`) and run REA in WSL
-    or on Linux; or
-  - open it in the Ghidra GUI with a Switch loader extension, and use REA
-    on the exported or converted file.
-  Check which of these REA handles before committing to one.
+- **Binary format.** Switch code is NSO, not PE. Use the Ghidra headless
+  CLI with the SwitchLoader extension, which reads NSO directly. For large
+  titles, prefer it to REA's Ghidra provider. Full steps and gotchas are in
+  `docs/switch-re-pipeline.md`.
 - **Free names at the platform boundary.** A Switch `main` calls the
   Nintendo SDK (`nn::fs`, `nn::hid`, `nn::os`, audio, NVN graphics) through
   dynamic imports with mangled C++ names. The whole platform boundary
   (Stage 2, step 1) is therefore already named. Demangle it and group it
   by subsystem.
-- **CPU.** Switch games are ARM: AArch64, or 32-bit ARMv7 for some titles.
-  The 64-bit gotchas above still apply to a 32-bit title. x87 doesn't,
-  but ARM float behavior (flush-to-zero, NEON) can differ from x86.
+- **CPU.** Switch games are ARM: AArch64, or 32-bit AArch32 for some
+  titles (NPDM MMU flags bit 0 = 0). With static recompilation, guest
+  memory keeps the original 32-bit layouts, so the pointer-size gotchas
+  only hit hand-written runtime code, which must store guest pointers as
+  `uint32_t`. AArch32 has its own translation traps (conditional
+  execution, shift semantics, non-fused `VMLA`, NEON flush-to-zero). See
+  `games/mhgu/NOTES.md`.
 - **Graphics.** NVN is Nintendo's own API. Map it onto your renderer
   abstraction, the same way as Direct3D in Stage 5.
 - **Reference runtime.** There's no original PC binary to hook into, so
