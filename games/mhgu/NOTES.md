@@ -76,8 +76,16 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
 - Progress:
   1. Done: extracted the game data, with the 1.4.0 update applied.
   2. Done: identified `subsdk0` (movie player).
-  3. In progress: prototype the translator on a few hundred functions and
-     check it against Ghidra's emulator.
+  3. In progress: prototype the translator and check it against Ghidra's
+     emulator. Status (2026-10-20), on a 2,000-function sample:
+     - 1,964 match exactly;
+     - 2 differ because Ghidra's emulator is wrong (division by zero);
+     - 20 time out on random inputs, so they're untested;
+     - 14 show small memory differences, still to trace.
+     Design and commands: `C:\rea-work\mhgu\recomp\README.md`. The test
+     harness is Windows-only (it uses a Windows feature to track memory
+     writes). Verification stays on Windows; the game builds for both
+     systems.
   4. Next: the recompiled game boots in a stub runtime and logs its way to
      the first graphics call.
 - Reference projects: XenonRecomp (and Unleashed Recompiled, which is built
@@ -136,9 +144,20 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
   recent PC).
 - Graphics: one Vulkan backend (SDL_GPU, or Vulkan directly) covers both
   Windows (AMD driver) and Linux (Mesa RADV). The runtime supplies its own
-  NVN function table, using the 478 names in `nvn_procs.txt`, and
-  translates the MFX shaders to SPIR-V. First check what MFX v0x35 holds:
-  Maxwell binaries, or source/IR as well.
+  NVN function table, using the 478 names in `nvn_procs.txt`.
+- Shaders: `system\app_shader\AppShaderPackage.mfx` (1.3 MB, MT
+  Framework MFX v0x35) holds every shader, and the engine looks them up by
+  name. Expected contents, not yet parsed: a table of shader names,
+  techniques and passes; vertex and constant-buffer layouts; and compiled
+  Maxwell code. Plan: translate the shaders to SPIR-V once, ahead of time,
+  so there's no runtime stutter. Some Maxwell shaders may need variants
+  per pipeline state (texture types, vertex formats), which is why
+  emulators translate at runtime. Emulator shader recompilers are a
+  possible reference or offline tool, but check their licenses (often
+  GPL).
+- Linux runtime differences: `mmap` instead of `VirtualAlloc` for the 4 GB
+  guest region, plus paths and threads. A few hundred lines. The Windows
+  build under Proton on Bazzite is a fallback only.
 - Frame rate: MHGU runs at 30 fps, and game logic is probably tied to the
   frame **(verify)**. Ship locked at 30 first.
 - Aspect ratio: the Switch renders 16:9 and the Go 2 is 16:10. Letterbox
@@ -166,8 +185,8 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
   mappings independent of the host page size.
 
 ## Open questions
-- What does `AppShaderPackage.mfx` (v0x35) contain: Maxwell shader
-  binaries only, or source or IR as well?
+- `AppShaderPackage.mfx`: confirm the expected layout and whether the
+  code is raw Maxwell or wrapped in NVN shader headers. Count the shaders.
 - Does any code in `main` rely on unaligned access or on SWP/SWPB (old
   atomics)?
 - How many threads does the game create, and which `nn::os`
