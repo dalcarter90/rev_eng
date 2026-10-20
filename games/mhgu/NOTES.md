@@ -63,6 +63,26 @@ dump. They haven't been checked yet.
   on it) and N64Recomp.
 - Renderer target:
 
+## iPad / iOS notes
+- The generated C is the same for every platform. On iPad, Clang compiles
+  it to ARM64 ahead of time, and the app is signed normally. No JIT is
+  needed, which is why this approach works on iOS where emulators struggle.
+- Raw Switch machine code can't run as-is, even though both are ARM64:
+  - iOS won't execute unsigned code pages without JIT;
+  - Apple reserves X18;
+  - iOS uses TPIDRRO_EL0 as its own thread pointer;
+  - the low 4 GB of address space is unavailable, while guest pointers are
+    absolute Switch addresses.
+  The C translation (context struct, `MEM()` macro) avoids all four.
+- On ARM64 hosts most x86 hazards disappear (division by zero, FMA, NaN
+  behavior and flags all match natively). Memory ordering is weak on both,
+  so keep real fences for `DMB`.
+- Page size: Apple uses 16 KB pages and the Switch 4 KB. Keep the runtime's
+  guest mappings independent of the host page size.
+- Entitlements to look into: increased memory limit and extended virtual
+  addressing, needed for a multi-GB guest address space. Check what a
+  free versus paid developer account allows.
+
 ## Open questions
 - **32-bit or 64-bit? Settle this before the translator grows.** Check
   `exefs/main.npdm` (the 64-bit instruction flag and the address space
