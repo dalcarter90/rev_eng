@@ -131,6 +131,19 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
        (`DEPTH`, counted inconclusive).
      - Blocked until the SDK layer exists: functions that call `nn::`/libc
        imports.
+     Two-mode verification (2026-10-21): both Unicorn runs were stopped
+     when the PC ran low on memory, after about 59% of 16,560 trials. On
+     the finished part (about 1,220 functions), each FPSCR mode gave:
+     - 1,107 (FPSCR = 0) and 1,108 (FZ+DN) functions verified, meaning a
+       match with at least 50% coverage;
+     - 49 that match but have under 50% coverage;
+     - **0 mismatches**;
+     - 63 inconclusive, mostly indirect calls through null pointers in
+       random memory ("target outside build").
+     The memory growth came from keeping every lazily mapped Unicorn page.
+     Fix: use a fresh Unicorn instance every few hundred functions, and run
+     one mode at a time. Translation: 42,550 functions, 4 failing (128-bit
+     NEON). `main` has no generic NEON float arithmetic, only `vmax`/`vmin`.
      Design and commands: `C:\rea-work\mhgu\recomp\README.md`. The test
      harness is Windows-only, so verification stays on Windows; the game
      builds for both systems.
