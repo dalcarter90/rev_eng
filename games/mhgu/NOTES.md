@@ -258,6 +258,36 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
   - `SVC`: there shouldn't be any in `main`, because system calls live in
     `sdk`. Any that turn up go to the runtime.
 
+## Next: getting to the title screen, in milestones
+A. **Headless game loop.** Graphics is a no-op, and the goal is for the main
+   loop to run frame after frame without a window. This finds every
+   non-graphics blocker first:
+   - display: `nn::vi` display and layer calls, and a vsync event the
+     runtime signals at 30 or 60 Hz, or the loop stalls;
+   - audio: an `nn::audio` renderer stub that keeps its timing events
+     ticking;
+   - input: `nn::hid` reporting one connected controller with nothing
+     pressed, and controller-applet calls returning success;
+   - settings: `nn::oe`/settings reporting English, plus time;
+   - saves: `nn::fs` save data mounted on a writable host folder.
+   Success means `.arc` files are read and frames keep counting.
+B. **NVN as logging stubs.** The game gets its 478 NVN functions from
+   `nvnBootstrapLoader` / `GetProcAddress` and calls them through pointers.
+   Hand out fake guest addresses (one reserved range) that the function
+   table maps to host functions. Graphics callbacks such as
+   `nv::SetGraphicsAllocator` need host-to-guest calls, made the same way
+   threads start guest code. Log the call sequence of one frame.
+C. **Window and clear color.** SDL3 window plus a Vulkan swapchain. Map
+   NVN queue, command buffer and present calls far enough to show the
+   game's clear color each frame.
+D. **Shaders.** Find `system\shader\ShaderPackage` (probably in an
+   `.arc`), identify the binary format, and translate the shaders to
+   SPIR-V ahead of time.
+E. **Draws, textures, render targets,** until the title screen appears.
+
+Saves: the game code is identical to the Switch's, so a save dumped from
+your own Switch should load unchanged once save data is mounted.
+
 ## Before first boot: checklist
 - [ ] Unaligned and aliasing-safe accessors. Register and guest-memory
       accessors that cast pointers (`*(uint128_t *)...`) are undefined
