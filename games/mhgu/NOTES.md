@@ -232,6 +232,34 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
   - `SVC`: there shouldn't be any in `main`, because system calls live in
     `sdk`. Any that turn up go to the runtime.
 
+## Before first boot: checklist
+- [ ] Unaligned and aliasing-safe accessors. Register and guest-memory
+      accessors that cast pointers (`*(uint128_t *)...`) are undefined
+      behavior under strict aliasing. Clang may also use aligned 16-byte
+      SSE moves for `uint128_t`, which crash on guest addresses that are
+      only 8-byte aligned (`vld1.64 {d0,d1}`). Use `memcpy`-based
+      accessors, or typedefs with `aligned(1), may_alias`. Make `Ctx`
+      16-byte aligned. Always build with `-fno-strict-aliasing`.
+- [ ] Computed register offsets (`RX*`): assert in debug builds that they
+      stay inside the VFP/NEON bank (`0x300`–`0x3ff` including the access
+      size), instead of masking with `& 1023`, which silently wraps.
+- [ ] Real `ldrex`/`strex` (`ldrexd`/`strexd`, `ldaex`/`stlex`) before a
+      second guest thread runs: a per-thread reservation (address and
+      value) in `Ctx`, and `strex` as a host compare-and-swap.
+- [ ] Startup path: run each module's init (`DT_INIT`/`.init_array`) with
+      dependencies first (sdk, then subsdk0, then main). Then follow the
+      real entry (sdk's startup, `nninitStartup`, `nnMain`) instead of
+      calling `nnMain` directly. MT Framework probably registers its
+      class/DTI tables in static constructors.
+- [ ] The 90 unresolved tail targets (21 functions): have Ghidra
+      disassemble them and create functions where they're real code.
+      Re-export.
+- [ ] OS-level imports (about 250): hand-written shims at the `nn::` API
+      level, starting as logging stubs. Emulators implement the kernel and
+      IPC services *below* the SDK, so their service layers don't plug in
+      here. Use them as behavior references only, and check licenses
+      (yuzu GPLv3, Ryujinx MIT).
+
 ## First target: Legion Go 2 (Windows and Linux)
 - Hardware: AMD Ryzen Z2 Extreme or Z1 Extreme (x86-64), RDNA 3.5 GPU,
   8.8" 1920x1200 (16:10) OLED **(verify for my unit)**.
