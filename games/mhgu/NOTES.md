@@ -144,6 +144,40 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
      Fix: use a fresh Unicorn instance every few hundred functions, and run
      one mode at a time. Translation: 42,550 functions, 4 failing (128-bit
      NEON). `main` has no generic NEON float arithmetic, only `vmax`/`vmin`.
+     SDK layer and linking (2026-10-21):
+     - `nso_link.py` loads and links `main`, `subsdk0` and `sdk` the way
+       `rtld` does, independently of Ghidra. Bases: main `0x60000000`,
+       sdk `0x62800000`, subsdk0 `0x63200000`. Main's linked image is
+       byte-identical to Ghidra's apart from the 2,051 import GOT slots.
+     - Import split (main has 695 PLT imports):
+       - 102 library imports (libc, libm, aeabi, C++ runtime,
+         nn::util/crypto/codec) are **recompiled from `sdk`**: 185
+         functions, bit-exact with the Switch. They reach only 4 runtime
+         functions (mutex lock/unlock, condvar wait/broadcast).
+       - The rest (fs, hid, audio, threads, sockets and so on) will be
+         hand-written host implementations.
+       - 17 imports resolve into `subsdk0` (movie player) and will be
+         replaced with FFmpeg.
+     - TLS reads (`mrc` TPIDRURO) become `Ctx.tls`, one per guest thread.
+       The layout follows Horizon's ThreadLocalRegion (musl locale at
+       +0x1e8, errno at +0x1ec).
+     - Translator: 128-bit and 256-bit values, NEON integer, permute and
+       crypto ops (`neon.h`), and register-space LOAD/STORE.
+     - sdk library alone: 158 of 187 functions verified against Unicorn,
+       0 mismatches.
+     - Tail calls use clang `musttail`, including through the function
+       table. Results on proto3 are identical on all 16,560 trials.
+     - FPSCR: in `sdk` only fenv, `fma`, `lrint` and `nearbyint` write it,
+       and none of those are in the build (the translator rejects
+       `vmsr fpscr`). Thread start and `rtld` don't set it. Yuzu gives new
+       threads FPSCR = 0 and copies the creator's value for created
+       threads, so **`RT_FPSCR = 0` is the likely real mode** (not
+       confirmed on hardware).
+     - No stack switching in `main`: no fibers, no `setjmp`/`longjmp`, no
+       C++ throw. The job system (`JobThread`) uses ordinary `nn::os`
+       threads.
+     - `ldrex`/`strex` currently always succeed (single-threaded tests).
+       Real host atomics are needed before more than one guest thread runs.
      Design and commands: `C:\rea-work\mhgu\recomp\README.md`. The test
      harness is Windows-only, so verification stays on Windows; the game
      builds for both systems.
@@ -283,10 +317,8 @@ effort:
 ## Open questions
 - Where is `system\shader\ShaderPackage`, and are its shaders raw
   Maxwell, NVN shader binaries, or something else?
-- `main` never writes FPSCR. Do `sdk` or `rtld` set FZ/DN at thread start?
-  Check for `vmsr` in those modules too.
-- Does the game switch stacks or contexts (fibers, `setjmp`/`longjmp`, a job
-  system)? Turning guest calls into host calls assumes it doesn't.
+- FPSCR: `RT_FPSCR = 0` per yuzu's thread model. Confirm on hardware if
+  that's ever cheap to do. Both modes pass the tests.
 - Does any code in `main` rely on unaligned access or on SWP/SWPB (old
   atomics)?
 - How many threads does the game create, and which `nn::os`
