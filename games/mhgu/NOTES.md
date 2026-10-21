@@ -181,8 +181,34 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
      Design and commands: `C:\rea-work\mhgu\recomp\README.md`. The test
      harness is Windows-only, so verification stays on Windows; the game
      builds for both systems.
-  4. Next: the recompiled game boots in a stub runtime and logs its way to
-     the first graphics call.
+  4. **Done (2026-10-21): the recompiled game boots to its first graphics
+     call.** It runs libc init, `nninitStartup`, main's 2,334 static
+     constructors, `nnMain` and 4 guest threads, then stops at
+     `nv::SetGraphicsAllocator`. That's 3,802 functions, and the run is
+     deterministic. Details:
+     - The boot runtime (`recomp/boot/`) replays sdk's `nn::init::Start`,
+       which is what `rtld` calls. The sdk's own OS setup and constructors
+       are skipped and logged, because host code replaces those services.
+     - Host implementations so far: heap memory,
+       `nn::mem::StandardAllocator`, ticks and sleep, read-only RomFS, and
+       threads and sync (mutexes, condition variables, events, semaphores,
+       message queues, timer events, TLS slots). Everything else goes to a
+       logging stub. Calls are resolved at run time, so adding a host
+       function needs no retranslation.
+     - `ldrex`/`strex` (including `ldaex`/`stlex`) are a host
+       compare-and-swap, and `dmb`/`dsb` are fences. Sleigh's `stlex`
+       skipped the exclusive check entirely. Not yet verified against
+       Unicorn.
+     - Ghidra had missed about 26,000 functions reached only through
+       pointers (vtables, callbacks), about a third of main. A data-pointer
+       scan created them. It had also cut about 3,500 bodies short after
+       calls wrongly marked as non-returning. Both are fixed.
+     - The boot build is about 87,000 functions (all of main plus sdk). 104
+       sdk crypto/NEON functions are untranslated and log if reached.
+     - Open: the game asked for an 850 MB heap block that the 1.5 GB heap
+       couldn't supply; it recovered with smaller blocks. 54 stub calls
+       remain (oe, time, settings, swkbd, ngc init).
+  5. Next: graphics (scope below).
 - Reference projects: XenonRecomp (and Unleashed Recompiled, which is built
   on it) and N64Recomp.
 
@@ -243,15 +269,15 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
 - [ ] Computed register offsets (`RX*`): assert in debug builds that they
       stay inside the VFP/NEON bank (`0x300`–`0x3ff` including the access
       size), instead of masking with `& 1023`, which silently wraps.
-- [ ] Real `ldrex`/`strex` (`ldrexd`/`strexd`, `ldaex`/`stlex`) before a
+- [x] Real `ldrex`/`strex` (`ldrexd`/`strexd`, `ldaex`/`stlex`) before a
       second guest thread runs: a per-thread reservation (address and
       value) in `Ctx`, and `strex` as a host compare-and-swap.
-- [ ] Startup path: run each module's init (`DT_INIT`/`.init_array`) with
+- [x] Startup path: run each module's init (`DT_INIT`/`.init_array`) with
       dependencies first (sdk, then subsdk0, then main). Then follow the
       real entry (sdk's startup, `nninitStartup`, `nnMain`) instead of
       calling `nnMain` directly. MT Framework probably registers its
       class/DTI tables in static constructors.
-- [ ] The 90 unresolved tail targets (21 functions): have Ghidra
+- [x] (Probably covered by the function-creation passes; recheck the list.) The 90 unresolved tail targets (21 functions): have Ghidra
       disassemble them and create functions where they're real code.
       Re-export.
 - [ ] OS-level imports (about 250): hand-written shims at the `nn::` API
