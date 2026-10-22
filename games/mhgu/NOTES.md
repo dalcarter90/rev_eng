@@ -237,7 +237,37 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
      both data. Guest layout: heap at `0x80000000` (2 GiB, yuzu's layout
      for address-space type 2), arena `0x42000000`, NVN fake procs at
      `0x50000000`.
-  6. Next: milestone B (scope below).
+  6. **Done (2026-10-21): milestone B, NVN host state.** Details:
+     - Scripted input (`RT_INPUT="400:A,..."`) gets past the warning
+       screens to the title. The game loads `title.arc`/`title_eng.arc`
+       and creates its save data (system and system_backup, about 5 MB) in
+       the host save folder.
+     - NVN objects are tracked by guest address (about 148,000 live at the
+       title). Command lists are recorded and submitted: about 200
+       commands and 10 draws per frame at the title. `RT_NVN_LOG=<frame>`
+       logs one frame.
+     - Graphics allocator and out-of-memory callbacks work through
+       host-to-guest calls.
+     - **Shader dump (`RT_SHADERS=1`):** 6,311 programs, each with a vertex
+       and a fragment stage, all created at load from
+       `AppShaderPackage.mfx`. 12,606 unique stages, 29.9 MB of code (256 B
+       to 5 KB each, median 2.3 KB). Format:
+       - the control section has magic `0x98761234` and is 0x848 bytes,
+         with the code size at +0x704;
+       - the code starts with a 0x30-byte header (magic `0x12345678`),
+         then the 0x50-byte Maxwell shader program header (SPH), then
+         instructions and constants.
+     - Fixed on the way: 149 callback functions (taken by PC-relative
+       `adr`/`ldr+add pc`) had never been created. Frame rate: Windows
+       rounds 1 ms sleeps up to 15.6 ms, so `timeBeginPeriod(1)` was needed
+       (otherwise 22 fps). With it, the game holds exactly 30 fps and the
+       main thread is idle 93% of the time.
+     - **Blocker:** the title scene plays `movie\movie06.mp4` and accepts
+       input only once the movie reports "playing". The movie library
+       (`subsdk0`) isn't run, so a host movie layer is needed.
+     - Unknown values: `nvnDeviceGetInteger` (17 queries) and texture
+       storage size/alignment. Both are needed for C and E.
+  7. Next: movie layer, then C (window), D (shaders), E (title screen).
 - Reference projects: XenonRecomp (and Unleashed Recompiled, which is built
   on it) and N64Recomp.
 
