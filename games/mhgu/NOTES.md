@@ -353,7 +353,19 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
        Also fixed: one missed sdk `vsscanf` callback, and duplicate jump
        targets in the translator.
      - Still to record for E: NVN depth mode and window origin (y-flip).
-  10. Next: E (first visible frame: the warning screen).
+  10. E started (2026-10-22):
+     - **All 6,311 programs translate**, with default state (16 float
+       attributes, 2D textures). They reduce to 6,303 distinct vertex and
+       fragment pairs, with no geometry or tessellation stages. All 12,606
+       SPIR-V modules pass `spirv-val`.
+     - Command set in use: state binds, clears, indexed and non-indexed
+       draws, barriers. No copy or blit commands.
+     - Depth mode and window origin are set once each
+       (`nvnDeviceSetDepthMode`, `nvnDeviceSetWindowOriginMode`) and are
+       already stored on the device object.
+     - Next: texture format list (ASTC check), the renderer (buffer copies
+       at submit, MIT deswizzle, texture cache, pipelines from the offline
+       SPIR-V), then a warning-screen screenshot.
 - Reference projects: XenonRecomp (and Unleashed Recompiled, which is built
   on it) and N64Recomp.
 
