@@ -322,6 +322,12 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
      - First rendering target: the warning screen, 10 programs (20
        stages), all 2D quads with one attribute and one texture.
      - Waiting on: a local Ryujinx source copy for translation.
+     - Translator choice: Ryujinx (C#, MIT) or Eden (a yuzu fork; C++,
+       GPLv3). Eden's recompiler fits the C/clang toolchain and could also
+       run inside the runtime as a fallback for unrecorded shader states,
+       including on Android. Linking GPL code into the runtime makes the
+       runtime GPL, which only matters if it's ever distributed. Both
+       work for the Ryujinx-or-Eden save trick.
   9. Next: D (translate the warning-screen shaders), then E.
 - Reference projects: XenonRecomp (and Unleashed Recompiled, which is built
   on it) and N64Recomp.
