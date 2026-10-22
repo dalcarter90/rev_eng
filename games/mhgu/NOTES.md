@@ -301,7 +301,28 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
        control section. Plan: record per-program state during play, then
        translate offline. License: MIT per the Ryubing project page; the
        LICENSE file is not yet verified.
-  8. Next: D (shaders), then E (first visible screen).
+  8. **2026-10-22 round (stopped for review before shader translation):**
+     - Texture kinds: plain color textures use the generic page kind,
+       sized exactly. Depth/stencil and compressible ones are padded. All
+       48,238 `.tex` files match the generic sizes. Padding everything
+       would have cost +31% overall (player equipment: 476 MB becomes
+       2.6 GB).
+     - The earlier heap corruption was really `nvnDeviceGetInteger(56)`
+       (linear texture stride alignment) returning 0. It's now 32
+       (hand-written). Padding had only hidden the bug.
+     - Name entry: host inline and full-screen keyboards type `RT_NAME`.
+       The rest of character creation can't be navigated blind.
+     - Shader control section: code length +0x6f8, register count +0x70c,
+       stage +0x714, texture binding count +0x7f9, unknown permutation
+       +0x804. Uniform binding b maps to c[b+3]. Texture binding b's handle
+       is at 0x20+8b in the stage's driver constant buffer, probably c[2]
+       as Ryujinx assumes for NVN (verify).
+     - `RT_PROGSTATE=1` records per-program draw state: 97 combinations up
+       to character creation.
+     - First rendering target: the warning screen, 10 programs (20
+       stages), all 2D quads with one attribute and one texture.
+     - Waiting on: a local Ryujinx source copy for translation.
+  9. Next: D (translate the warning-screen shaders), then E.
 - Reference projects: XenonRecomp (and Unleashed Recompiled, which is built
   on it) and N64Recomp.
 
