@@ -267,7 +267,41 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
        (`subsdk0`) isn't run, so a host movie layer is needed.
      - Unknown values: `nvnDeviceGetInteger` (17 queries) and texture
        storage size/alignment. Both are needed for C and E.
-  7. Next: movie layer, then C (window), D (shaders), E (title screen).
+  7. **Done (2026-10-22): movie stand-in, NVN queries, milestone C.**
+     - Movie stand-in (`hle_movie.c`): host Extractor/Decoder/MediaData/
+       Buffer for subsdk0's MediaCodec-style API. The extractor reads the
+       `.mp4` header (movie06: H.264/AAC, 960x540, 29.97 fps, 5,280
+       frames, 176 s). The decoder emits black NV12 frames with real
+       timestamps. Video track only, so movies are silent for now.
+       Movies end on their own, and A skips them.
+     - Past the title into the menus and character creation. The game
+       loads player-model archives and title music, and writes its save.
+       **Next blocker: hunter-name entry** (software keyboard stub, and
+       `swkbd_eu.arc` is not found).
+     - NVN queries: the runtime asks the stripped driver in `sdk` for the
+       real address of all 477 entry points (`nvn_closure.py`):
+       - 316 are pure; 196 of them now run as recompiled sdk code
+         (builders, getters/setters, `nvnDeviceGetInteger`, texture
+         handles, storage size/alignment);
+       - 140 reach the OS and stay hand-written;
+       - 21 make indirect calls.
+       Real values include API 53.105 and uniform alignment 256.
+       `NvRmGpuDeviceChooseKind` is hand-written. GetInteger 24 and 56 read
+       device fields set over IPC; they stay 0 for now.
+     - Texture-size bug: the `.tex` data is padded to the hardware's sizes,
+       and a generic page kind undersized some textures, which overran the
+       game heap. Current fix: every texture is rounded up to 128 KB.
+     - Milestone C (`present_vk.c`): SDL3 window plus a Vulkan swapchain,
+       tested on an RTX 5070 Ti. Each frame shows its clear color (black
+       on these screens; a forced color proved the path works).
+       `RT_HEADLESS=1` runs without a window.
+     - D assessment: Ryujinx's shader translator fits the dumped stages
+       (strip the 0x30 NVN header). Inputs (texture types, attribute
+       types, binding slots) come from NVN state and the 0x848-byte
+       control section. Plan: record per-program state during play, then
+       translate offline. License: MIT per the Ryubing project page; the
+       LICENSE file is not yet verified.
+  8. Next: D (shaders), then E (first visible screen).
 - Reference projects: XenonRecomp (and Unleashed Recompiled, which is built
   on it) and N64Recomp.
 
