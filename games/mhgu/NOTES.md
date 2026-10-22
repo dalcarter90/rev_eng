@@ -208,7 +208,36 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
      - Open: the game asked for an 850 MB heap block that the 1.5 GB heap
        couldn't supply; it recovered with smaller blocks. 54 stub calls
        remain (oe, time, settings, swkbd, ngc init).
-  5. Next: graphics (scope below).
+  5. **Done (2026-10-21): milestone A, the headless game loop.** NVN is a
+     no-op, and the game runs anyway:
+     - It reads `root.arc`, `resident.arc`, `resident_eng.arc` and
+       `warning_eng.arc`, plus the shader package, system textures, a
+       load-screen texture and the GUI font. English is selected.
+     - 15 guest threads run on host threads (jobs, resource loader, sound,
+       rendering, storage, NPad).
+     - It runs about 30 fps (1,810 frames in 81 s) with about 16 draws per
+       frame. It sets up 6,311 shader programs and about 19,000 buffers.
+     - It sits on what's probably the warning screen (6,804 functions),
+       waiting for input or a timer.
+     Verification: proto5 (new code plus 58 functions with atomics) gave
+     973 verified and 0 mismatches. All 26 atomic functions that ran
+     match. proto4's partial run: 660 verified, 0 mismatches.
+     Bugs fixed on the way:
+     - `Tick`/`TimeSpan` are returned through memory (sret, the result
+       pointer in r0). Returning them in registers broke the frame limiter.
+     - `__aeabi_uidiv` jumps into an unrolled loop Ghidra never
+       disassembled. Fixed with `AddJumpTargets.java`.
+     - Bodies cut short after calls: the repair now repeats until nothing
+       new turns up.
+     - `GetAudioRendererWorkBufferSize` makes an IPC call, so it now has a
+       host implementation.
+     The accessors are aliasing- and alignment-safe (`may_alias`,
+     `aligned(1)`, `_Alignas(16)`, `-fno-strict-aliasing`), and `RX*`
+     offsets are checked. Of the old unresolved tail branches, 2 remain,
+     both data. Guest layout: heap at `0x80000000` (2 GiB, yuzu's layout
+     for address-space type 2), arena `0x42000000`, NVN fake procs at
+     `0x50000000`.
+  6. Next: milestone B (scope below).
 - Reference projects: XenonRecomp (and Unleashed Recompiled, which is built
   on it) and N64Recomp.
 
@@ -289,14 +318,14 @@ Saves: the game code is identical to the Switch's, so a save dumped from
 your own Switch should load unchanged once save data is mounted.
 
 ## Before first boot: checklist
-- [ ] Unaligned and aliasing-safe accessors. Register and guest-memory
+- [x] Unaligned and aliasing-safe accessors. Register and guest-memory
       accessors that cast pointers (`*(uint128_t *)...`) are undefined
       behavior under strict aliasing. Clang may also use aligned 16-byte
       SSE moves for `uint128_t`, which crash on guest addresses that are
       only 8-byte aligned (`vld1.64 {d0,d1}`). Use `memcpy`-based
       accessors, or typedefs with `aligned(1), may_alias`. Make `Ctx`
       16-byte aligned. Always build with `-fno-strict-aliasing`.
-- [ ] Computed register offsets (`RX*`): assert in debug builds that they
+- [x] Computed register offsets (`RX*`): assert in debug builds that they
       stay inside the VFP/NEON bank (`0x300`–`0x3ff` including the access
       size), instead of masking with `& 1023`, which silently wraps.
 - [x] Real `ldrex`/`strex` (`ldrexd`/`strexd`, `ldaex`/`stlex`) before a
