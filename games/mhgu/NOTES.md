@@ -328,7 +328,32 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
        including on Android. Linking GPL code into the runtime makes the
        runtime GPL, which only matters if it's ever distributed. Both
        work for the Ryujinx-or-Eden save trick.
-  9. Next: D (translate the warning-screen shaders), then E.
+  9. **Done (2026-10-22): milestone D for the warning screen, and a real
+     save loads.**
+     - `shader_tool/nvn_shaderc` runs Eden's shader recompiler offline. It
+       is GPL-3.0-or-later; the runtime doesn't link it. The vendored Eden
+       subset is pinned by content hash (the download had no commit), and
+       the dependencies (fmt, sirit, SPIRV-Headers, boost) were checked
+       against Eden's SHA-512 hashes.
+     - Bindings confirmed from the real sdk code: texture handles are in
+       c[2] (the driver sets method 0x982 to 2, Eden's "proprietary driver"
+       case), and uniform binding b maps to c[b+3]. c[1] holds the
+       compiler's constants (control +0x6fc size, +0x700 offset); Eden
+       folds them into the shader.
+     - Warning screen: 13 recorded states become 10 programs (9 textured 2D
+       quads and one FXAA pass). All 20 SPIR-V modules pass `spirv-val`
+       with `uniformBufferStandardLayout` on. GLSL dumps are kept for
+       reading.
+     - **A save made in Eden loads.** The game loads the saved character
+       (hair 010, armor 663), skips character creation and enters village
+       v01. It runs 6,000 frames headless with no crash.
+     - Fixed on the way: 382 switch jump tables that Ghidra missed or
+       garbled (357 main, 25 sdk) were decoded from the binary and checked
+       against their bounds checks, then 104 functions were re-exported.
+       Also fixed: one missed sdk `vsscanf` callback, and duplicate jump
+       targets in the translator.
+     - Still to record for E: NVN depth mode and window origin (y-flip).
+  10. Next: E (first visible frame: the warning screen).
 - Reference projects: XenonRecomp (and Unleashed Recompiled, which is built
   on it) and N64Recomp.
 
