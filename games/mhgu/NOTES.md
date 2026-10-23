@@ -353,21 +353,37 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
        Also fixed: one missed sdk `vsscanf` callback, and duplicate jump
        targets in the translator.
      - Still to record for E: NVN depth mode and window origin (y-flip).
-  10. E started (2026-10-22):
-     - **All 6,311 programs translate**, with default state (16 float
-       attributes, 2D textures). They reduce to 6,303 distinct vertex and
-       fragment pairs, with no geometry or tessellation stages. All 12,606
-       SPIR-V modules pass `spirv-val`.
-     - Command set in use: state binds, clears, indexed and non-indexed
-       draws, barriers. No copy or blit commands.
-     - Depth mode and window origin are set once each
-       (`nvnDeviceSetDepthMode`, `nvnDeviceSetWindowOriginMode`) and are
-       already stored on the device object.
-     - Next: texture format list (ASTC check), the renderer (buffer copies
-       at submit, MIT deswizzle, texture cache, pipelines from the offline
-       SPIR-V), then a warning-screen screenshot.
-- Reference projects: XenonRecomp (and Unleashed Recompiled, which is built
-  on it) and N64Recomp.
+  10. **Done (2026-10-23): milestone E. The game renders.**
+     - **The warning screen renders correctly** through all 10 draws,
+       including FXAA, the right way up. Running on to the village with
+       the Eden-made save, it also renders Character Select (with the 3D
+       character) and village v01 (buildings, NPCs, a Moofah). That's about
+       460 draws per frame, 0 skipped, 169 pipelines, 162 textures, 30 fps
+       (8 ms per frame for NVN replay plus rendering), 4,214 frames clean.
+       Tested on an RTX 5070 Ti, headless and windowed (MAILBOX).
+     - Renderer (`gpu.h`, `gpu_vk.c`, executor in `hle_nvn.c`): submitted
+       NVN command lists are replayed into one Vulkan command buffer per
+       frame. Guest ranges are copied into a per-frame ring buffer. Textures
+       are cached by guest address and re-uploaded on CPU writes (Windows
+       write-watch). Pipelines come from the offline SPIR-V.
+     - Deswizzling is written from the Tegra X1 TRM's GOB layout (no GPL in
+       the runtime). It matches the driver's storage size for all 112
+       texture shapes.
+     - Formats in use: BC1/3/4/5, RGBA8 (+sRGB), R8, RG8, RG16, RG16F,
+       RGBA32F, D32F, D24S8 (rendered as D32S8 on AMD). No ASTC or BC7.
+     - Depth mode 0..1 matches Vulkan. The origin is upper-left, so the
+       viewport is flipped vertically.
+     - All 6,303 programs translate and validate with default state.
+     - D bug fixed: the NVN vertex attribute state is 4 bytes, not 8. That
+       had shifted attributes and turned the warning screen yellow.
+     - Known gaps: alpha test ignored (black boxes on flower cards); flat
+       ground and lighting (not investigated); integer vertex attributes
+       read as float; sampler enum values taken from memory, not checked;
+       no texture views, MSAA, 3D textures, partial clears or polygon
+       offset; Linux needs its own write tracking; movies are black and
+       silent; no audio or real controller input yet.
+  11. Next: Legion Go 2 test, then rendering correctness (compare against
+      Eden), then playable (controller input, audio), then Linux/Bazzite.
 
 ## Translator design for AArch32
 - **Context struct:** R0–R12, SP, LR; the N, Z, C, V and Q flags (keep
