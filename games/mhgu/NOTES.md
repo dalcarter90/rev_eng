@@ -382,7 +382,13 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
        no texture views, MSAA, 3D textures, partial clears or polygon
        offset; Linux needs its own write tracking; movies are black and
        silent; no audio or real controller input yet.
-  11. Next: Legion Go 2 test, then rendering correctness (compare against
+  11. **First run on the Legion Go 2 (2026-10-23): works.** AMD Radeon 780M
+      (Ryzen Z1 Extreme, RDNA 3), Vulkan 1.4, driver 0x80018b. Windowed
+      swapchain 1920x1130, RGBA8, FIFO. The Capcom logo and the warning
+      screen render on the device at about 30 fps (230 frames in 10 s).
+      Clean exit after the default 320-frame run. Still to do there: a long
+      run to the village, and fullscreen 1920x1200.
+  12. Next: then rendering correctness (compare against
       Eden), then playable (controller input, audio), then Linux/Bazzite.
 
 ## Translator design for AArch32
@@ -490,8 +496,8 @@ your own Switch should load unchanged once save data is mounted.
       (yuzu GPLv3, Ryujinx MIT).
 
 ## First target: Legion Go 2 (Windows and Linux)
-- Hardware: AMD Ryzen Z2 Extreme or Z1 Extreme (x86-64), RDNA 3.5 GPU,
-  8.8" 1920x1200 (16:10) OLED **(verify for my unit)**.
+- Hardware: this unit is a Ryzen Z1 Extreme with a Radeon 780M (RDNA 3)
+  per the first run's log. Screen 8.8" 1920x1200 (16:10).
 - Build for `x86-64-v3` (hardware FMA, available on the Go 2 and any
   recent PC).
 - Graphics: one Vulkan backend (SDL_GPU, or Vulkan directly) covers both
