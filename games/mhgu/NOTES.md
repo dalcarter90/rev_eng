@@ -386,8 +386,10 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
       (Ryzen Z1 Extreme, RDNA 3), Vulkan 1.4, driver 0x80018b. Windowed
       swapchain 1920x1130, RGBA8, FIFO. The Capcom logo and the warning
       screen render on the device at about 30 fps (230 frames in 10 s).
-      Clean exit after the default 320-frame run. Still to do there: a long
-      run to the village, and fullscreen 1920x1200.
+      Clean exit after the default 320-frame run. A long run on the Go 2
+      also reached the village with the pre-fix build: characters and
+      Moofahs rendered, while the field and flowers showed the sampler and
+      alpha-test bugs fixed in item 12.
   12. **Rendering fixes (2026-10-23):**
       - Samplers: the texture handle (packed by the driver's own code: ids
         in the low 32 bits, 1 in the high word) was decoded from all 64
