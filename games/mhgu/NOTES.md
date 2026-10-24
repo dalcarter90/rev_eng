@@ -388,7 +388,34 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
       screen render on the device at about 30 fps (230 frames in 10 s).
       Clean exit after the default 320-frame run. Still to do there: a long
       run to the village, and fullscreen 1920x1200.
-  12. Next: then rendering correctness (compare against
+  12. **Rendering fixes (2026-10-23):**
+      - Samplers: the texture handle (packed by the driver's own code: ids
+        in the low 32 bits, 1 in the high word) was decoded from all 64
+        bits, so every draw got the fallback sampler (nearest, clamp, no
+        mips). That was the flat, streaky ground. The village now uses its
+        9 real samplers: trilinear, repeat/clamp, 16x anisotropy and a
+        shadow-compare sampler.
+      - Sampler and vertex-format values are now taken from the decompiled
+        driver encoders and format table, including the scaled and
+        10-10-10-2 vertex formats. Integer vertex attributes get their real
+        types in translation.
+      - Alpha test: each program has a second fragment shader
+        (`fragment_at.spv`) with a discard driven by push constants
+        (function and reference). This needed a marked change to the
+        vendored Eden copy (offline tool only, recorded in PIN.txt). All
+        6,303 programs re-translate and validate. The flower cards render.
+      - The village state recording gave 533 states over 139 programs, all
+        translating to identical SPIR-V per program. 8 cube-map targets now
+        have correct translations (the default set had them as 2D).
+      - Village frame 4200: 464 draws, 0 skipped, 30 fps.
+      - Go 2 package: `village.bat` (scripted run with screenshots),
+        `run.bat full` / F11 / Alt+Enter for borderless fullscreen.
+      - Plans written (not started): SDL3 gamepad to npad; a host audio
+        renderer from the public binary format (voices, mixes, biquads,
+        aux, I3DL2 reverb written from the spec); FFmpeg (LGPL, dynamically
+        linked) for movies; Linux write tracking (PAGEMAP_SCAN plus async
+        userfaultfd, mprotect/SIGSEGV as fallback).
+  13. Next: then rendering correctness (compare against
       Eden), then playable (controller input, audio), then Linux/Bazzite.
 
 ## Translator design for AArch32
