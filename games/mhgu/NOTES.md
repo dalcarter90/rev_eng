@@ -456,7 +456,22 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
       - `RT_FRAMES=0` means unlimited, so `run.bat` no longer stops after
         300 frames. `village.bat` now pets the Moofah and prints a
         performance summary (`perf.ps1`).
-  15. Next: then rendering correctness (compare against
+  15. **Go 2 results after the speedup (2026-10-25):** two `village.bat`
+      runs (Balanced and Performance) gave nearly identical results:
+      - frame time 33.5–33.6 ms (29.8 fps), worst 35.5–35.7 ms;
+      - asleep 2.7 ms;
+      - **NVN 5.5–5.7 ms**, of which replay 4.3–4.5 ms (it was 19.4 ms);
+      - present 0.8 ms (GPU wait 0.1 ms);
+      - per-frame GPU timing: textures 0.7, indices 0.4, vertices 0.7,
+        uniforms and descriptors 0.5, pipeline 0.5, record 0.8 ms.
+      Power mode makes no difference, so the remaining small miss
+      against 33.3 ms is probably frame pacing. A likely cause: the Go 2
+      panel runs at 144 Hz, and 33.3 ms isn't a multiple of a 144 Hz
+      refresh, while 60 and 120 Hz are. To test.
+      Village draws still use `shaders_all` for some programs ("attribute
+      3 is format 39, translated as float"). A play-session recording
+      (1,121 states, 147 programs) is ready to merge.
+  16. Next: then rendering correctness (compare against
       Eden), then playable (controller input, audio), then Linux/Bazzite.
 
 ## Translator design for AArch32
