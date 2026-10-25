@@ -426,7 +426,37 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
       frame. The game renders 1920x1080 (docked).
       Performance leads: GPU waits each frame (frames in flight); per-draw
       overhead in replay; the game code is compiled at `-O1`.
-  14. Next: then rendering correctness (compare against
+  14. **Fixes, performance and controller (2026-10-24, desktop-tested):**
+      - Base vertex: every indexed draw is `DrawElementsBaseVertex`
+        (1.26 M in a village run), and the replay ignored the base vertex.
+        Batched particles read other batches' vertices, which turned the
+        Moofah's fading heart into a grid of small hearts. Fixed, with
+        indices copied as they are and Vulkan `vertexOffset` doing the work.
+      - Render-target feedback: a soft-particle draw samples the bound
+        depth buffer, and a 480x270 color target is sampled while bound.
+        Undefined in Vulkan; NVIDIA tolerates it, AMD may show garbage.
+        Those draws now sample a copy (about 1 per frame).
+      - NVN CPU cost on the desktop: 9.7 ms down to 2.3 ms per frame (3.0 ms
+        with recording on). Fixes: hashed property names, per-object
+        descriptor caches, an op-code dispatch, no getenv/strstr per call,
+        write-watch once per texture per list, typed index scans. Two frames
+        were already in flight; GPU wait is 0.01 ms. About 5 us per draw.
+        Go 2 estimate: 19.4 ms down to about 5–7 ms (unmeasured).
+      - `-O2` for the generated code: not done. The largest file takes 753 s
+        and at least 7.5 GB at `-O2`, against 266 s and 1.7 GB at `-O1`.
+      - Controller (`input_sdl.c`): SDL3 gamepad and keyboard map to player
+        1's Pro Controller. Buttons by position by default (`label`
+        option), 10% dead zone, triggers past 30%. Tested with a virtual
+        pad only.
+      - Recording in play: `run.bat` writes `runs\states\` per session.
+        `progstate_merge.py` merges sessions and retranslates only the
+        programs that gained new states.
+      - Crash report: `runs\last\crash.txt` on a crash, fatal error or 30 s
+        stall (last 80 log lines, registers, labelled return addresses).
+      - `RT_FRAMES=0` means unlimited, so `run.bat` no longer stops after
+        300 frames. `village.bat` now pets the Moofah and prints a
+        performance summary (`perf.ps1`).
+  15. Next: then rendering correctness (compare against
       Eden), then playable (controller input, audio), then Linux/Bazzite.
 
 ## Translator design for AArch32
