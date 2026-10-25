@@ -417,7 +417,16 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
         aux, I3DL2 reverb written from the spec); FFmpeg (LGPL, dynamically
         linked) for movies; Linux write tracking (PAGEMAP_SCAN plus async
         userfaultfd, mprotect/SIGSEGV as fallback).
-  13. Next: then rendering correctness (compare against
+  13. **Go 2 village run with the fixed build (2026-10-25):** everything
+      renders except some mesh around the Moofah's heart (to investigate).
+      Frame time is about 34.4–34.6 ms, so roughly 29 fps against the 33.3 ms
+      (30 fps) target. Only 2.8 ms of each frame is spent asleep, and about
+      19.4 ms is inside NVN (replay plus Vulkan, all threads), compared
+      with about 8 ms on the desktop. About 463 draws, 5.1 MB copied per
+      frame. The game renders 1920x1080 (docked).
+      Performance leads: GPU waits each frame (frames in flight); per-draw
+      overhead in replay; the game code is compiled at `-O1`.
+  14. Next: then rendering correctness (compare against
       Eden), then playable (controller input, audio), then Linux/Bazzite.
 
 ## Translator design for AArch32
