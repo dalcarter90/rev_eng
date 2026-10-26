@@ -471,7 +471,43 @@ Items marked **(verify)** haven't been confirmed in the binary yet.
       Village draws still use `shaders_all` for some programs ("attribute
       3 is format 39, translated as float"). A play-session recording
       (1,121 states, 147 programs) is ready to merge.
-  16. Next: then rendering correctness (compare against
+  16. **Pacing and audio (2026-10-25):**
+      - Pacing: the host pacer assumed 60 Hz, so at 30 fps it drifted and
+        sometimes slept a whole extra vsync (the misleading "2.7 ms
+        asleep"). The 35.5 ms worst frames were screenshot writes. Fixed,
+        with refresh-rate detection, MAILBOX where available, and a warning
+        when the panel rate isn't a multiple of 30 (Go 2 at 144 Hz: use 60 or
+        120 Hz, or VRR).
+      - The play-session states were merged: 67 programs retranslated,
+        150 in `shaders_d`.
+      - **Audio works:** the sdk contains Nintendo's own CPU audio renderer
+        (`nn::audio::server`, `dsp::CommandListProcessor`). The runtime opens
+        every renderer in that mode and runs it translated on the game's
+        sound thread, then sends the output to SDL3. The 13 NEON DSP kernels
+        are host C and match Nintendo's code bit for bit in Unicorn.
+        Village: 48 kHz, 182 voices, 70 effects, 200 frames/s, no
+        underruns. The sound thread uses about 7.9 ms per 33 ms frame.
+        Movie audio is still missing.
+  17. **Existing project found (2026-10-26): MHGURecomp**
+      (github.com/morerokk/MHGURecomp, MIT, by "Rokk"). It is a static
+      recompilation of the same 1.4.0 build (32-bit ARM to C plus a host
+      runtime), started around 2026-10-20 and described as fully playable.
+      Its README lists:
+      - multiplayer over local wireless emulation;
+      - Windows plus native Linux;
+      - resolution, MSAA/FXAA, 30–240 fps, ultrawide with HUD anchoring;
+      - mods (romfs, Forge plugins) and cheats;
+      - FFmpeg movies and an ASTC decoder.
+      How it differs from this one:
+      - It has its own lifter (Python, A32/VFP/NEON) instead of Ghidra
+        p-code.
+      - It emulates the system at the kernel/IPC level (SVCs, services),
+        not the `nn::` API level.
+      - It has its own MIT Maxwell shader translator (GLSL and Metal
+        Shading Language) instead of Eden.
+      - Android is planned but not started (`docs/research/android.md`).
+      It is also checked against Unicorn.
+  18. Next: then rendering correctness (compare against
       Eden), then playable (controller input, audio), then Linux/Bazzite.
 
 ## Translator design for AArch32

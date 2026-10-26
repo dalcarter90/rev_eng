@@ -40,6 +40,10 @@ Most of the time saved comes from this stage.
      hold the rights to. Plan on TestFlight or sideloading for your own
      devices, unless the rights holder is involved.
 
+**Re-check now and then.** New projects can appear while you work. For
+MHGU, an independent static recompilation of the same build went public
+about a week into this project.
+
 **Exit check:** no existing port covers your goal, and `NOTES.md` records
 the source of your copy, its version and its hashes.
 
