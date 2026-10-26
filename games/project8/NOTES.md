@@ -94,7 +94,7 @@ there with `timeBeginPeriod(1)`), so watch frame times closely.
   which upstream says is timebase-correct.
 
 ## Status
-- [ ] ISO of own disc available
+- [x] ISO of own disc available (region confirmed when the launcher checks it)
 - [ ] Desktop Windows report filed
 - [ ] Go 2 Windows report filed
 - [ ] Linux build environment (WSL2) set up for Task 2
