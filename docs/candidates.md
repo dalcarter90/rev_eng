@@ -54,7 +54,14 @@ See `games/mhgu/NOTES.md`. MHGURecomp (MIT) is fully playable.
 
 ## Metroid Prime 2 / 3
 Checked 2026-10-26.
-- PrimeRecomp (r/decomps post) ports Metroid Prime Remastered. Prime 2 and 3
+- PrimeRecomp (github.com/gminustwo/primerecomp, MIT) ports Metroid Prime
+  Remastered (Switch 1.0.0, ARM64). v0.0.2 early beta (Oct 2026): Frigate and
+  parts of Tallon IV playable; lighting bugs; Linux AppImage untested on real
+  GPUs or a Steam Deck. It's built on LAS Recomp (github.com/peiikai/LASRecomp,
+  the Link's Awakening Switch recompilation, MIT), as is MHGURecomp. LAS
+  Recomp is the shared Switch toolkit: recompiler, Horizon kernel and
+  services, NVN-to-Vulkan renderer, shader translator, audio. Start a future
+  Switch game from it. Prime 2 and 3
   have no Switch version, so that Switch method doesn't carry over directly.
   Their originals are GameCube (Echoes) and Wii (Corruption, Trilogy), on
   PowerPC CPUs and a fixed-function GPU.
