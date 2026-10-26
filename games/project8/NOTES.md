@@ -26,8 +26,34 @@ We contribute testing and fixes; we don't fork the port.
 Upstream has only tested the complete v0.3.0 build under Proton. Report
 from both machines:
 - Desktop: RTX 5070 Ti, Windows 11.
-- Legion Go 2: Ryzen Z1 Extreme / Radeon 780M, Windows 11, 1920x1200 panel
-  (set it to 60 or 120 Hz for 30 fps content).
+- Legion Go 2: Ryzen Z1 Extreme / Radeon 780M, Windows 11, 1920x1200
+  144 Hz panel. 33.3 ms isn't a multiple of a 144 Hz refresh, so 30 fps
+  paces unevenly there (seen in the MHGU port). Test at 144 Hz (what a
+  typical user has), then at 60 or 120 Hz.
+
+Prompt for the local session: `prompts/task1-windows-report.md`.
+
+Upstream baselines to compare against (v0.3.0, Proton 10 on a Steam Deck,
+late-game Funpark fixture, ~2,600 draws per frame; our scenes differ):
+- capped (default): 30 fps, 33.32 / 34.25 ms p50 / p95;
+- uncapped: 27.01 / 30.99 ms p50 / p95, 36.30 effective fps;
+- native Linux on the Deck, uncapped: 22.00 / 23.00 ms, 45.58 effective fps.
+
+Measuring on Windows: PresentMon (Intel, open source) gives per-frame times,
+so we can report the same p50 / p95 / effective fps; performance counters
+(`Get-Counter`) give total and per-process CPU. `powercfg /energy` (admin)
+lists each process's timer-resolution request, which shows directly whether
+the v0.2.0 high-resolution timer fix is active on real Windows.
+
+Also worth reporting (from upstream SETUP.md and KNOWN_ISSUES.md):
+- Launcher defaults: the Display screen's frame-rate cap is on, and the
+  Performance setting is on for a fresh install. Leave both as they are.
+- The game opens borderless fullscreen at desktop size by default: check
+  how 16:9 shows on the Go 2's 16:10 panel.
+- The launcher's Stop button on Windows terminates the game outright. It
+  has never been tried on real Windows hardware.
+- Everything stays in the unpacked folder: `game/` (copied data), `saves/`,
+  `config/settings.toml` and `install.toml`, `logs/`.
 
 Test plan per machine:
 1. Download the v0.3.0 Windows archive and unpack it to a writable folder.
@@ -38,13 +64,14 @@ Test plan per machine:
    how long the 4.7 GB copy takes.
 4. Game: boot to the menu, Free Skate for 5+ minutes, then one Career level
    with an in-level cutscene. Keep the default frame cap on.
-5. Measure: fps (does it hold 30?), smoothness and stutter, total CPU % in
-   Task Manager, GPU name in the logs.
+5. Measure: fps (does it hold 30?), frame times (p50 / p95), stutter, total
+   CPU %, and the GPU name in the logs.
 6. Optional: turn the cap off and confirm the known cutscene speed-up
    happens on Windows too.
-7. Collect the logs (launcher home screen: Open logs folder).
-8. File the "Windows report" issue template, one per machine, ticking "no
-   game files".
+7. Try the launcher's Stop button once, and a normal quit.
+8. Collect the logs (launcher home screen: Open logs folder).
+9. File the "Windows report" issue template, one per machine, ticking "no
+   game files". The local session drafts it; I file it myself.
 
 Relevant upstream history: v0.1.0 on Windows paced near 32 Hz because Windows'
 default ~15.6 ms timer turned a 16.67 ms vblank sleep into 31.25 ms. v0.2.0
