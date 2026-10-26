@@ -20,6 +20,22 @@ Checked 2026-10-26.
   GPU shader translation), with credit to XenonRecomp/XenosRecomp
   (hedge-dev).
 
+### How to help Project8Recomp (from its CONTRIBUTING.md and KNOWN_ISSUES.md)
+- Rule: no game content ever (assets, xex, images, keys, generated code).
+  `tools/check_no_game_content.sh` enforces it.
+- Most valuable: a **Windows report** from real hardware (issue template
+  `windows_report.yml`). The complete v0.3.0 build has only run under Proton.
+- A `default.xex` SHA-256 and file size from a PAL or NTSC-J disc (not the
+  file itself).
+- Bug reports with logs (launcher: Open logs folder).
+- Fixes. Open known issues:
+  - in-level cutscenes run 3–5x too fast when uncapped (frame-rate-dependent
+    timing; the next step is reading the in-level cutscene update);
+  - macOS M1 performance (MoltenVK path, about 4 fps in heavy scenes);
+  - Windows pacing and CPU use.
+- PRs to `src/`, `config/` and `patches/` are applied as patches through the
+  development tree. `docs/`, `tools/` and `.github/` merge normally.
+
 ## Tony Hawk's Proving Ground (Xbox 360 / PS3, 2007): no port found
 Checked 2026-10-26 with one web search. Same studio and engine generation as
 Project 8, so the Project 8 ports' ReXGlue setup and engine knowledge would
@@ -35,3 +51,15 @@ starting.
 
 ## MHGU
 See `games/mhgu/NOTES.md`. MHGURecomp (MIT) is fully playable.
+
+## Metroid Prime 2 / 3
+Checked 2026-10-26.
+- PrimeRecomp (r/decomps post) ports Metroid Prime Remastered. Prime 2 and 3
+  have no Switch version, so that Switch method doesn't carry over directly.
+  Their originals are GameCube (Echoes) and Wii (Corruption, Trilogy), on
+  PowerPC CPUs and a fixed-function GPU.
+- Existing work: PrimeDecomp/echoes, a matching decompilation of Echoes
+  (several regional builds), and PrimeDecomp/prime for Prime 1. GameCube/Wii
+  static recompilation tools (e.g. DolRecomp) were early as of 2026.
+- Likely routes: contribute to the Echoes decomp; or a GC/Wii static
+  recompilation with a GX/TEV-to-modern-GPU layer.
