@@ -78,6 +78,36 @@ default ~15.6 ms timer turned a 16.67 ms vblank sleep into 31.25 ms. v0.2.0
 uses high-resolution timers. That's the same trap the MHGU port hit (fixed
 there with `timeBeginPeriod(1)`), so watch frame times closely.
 
+## Task 1 results: desktop
+Local kit: `C:\rea-work\project8\kit` (`capture-session.ps1`,
+`collect-report.ps1`), reports in `C:\rea-work\project8\reports\`.
+- Kit bug, fixed locally: under Windows PowerShell 5.1, `$PSScriptRoot` is
+  empty in `param()` defaults when run with `powershell -File`, so
+  `Join-Path` failed. Set path defaults in the script body instead.
+
+### Run 1 (first impressions, 2026-10-26; no numbers yet)
+Disc accepted, setup worked, game reached Free Skate (played as Nyjah
+Huston). 2560x1440 desktop, launcher defaults (cap on, borderless
+fullscreen at desktop size).
+- **Picture doesn't fit the screen:** score HUD and most menus cut off;
+  Options hard to use. Likely Windows-only, so worth the most to upstream.
+  Proton/gamescope has no display scaling, so a DPI mismatch
+  (window sized in scaled units, swapchain in pixels, or the reverse) is
+  the first suspect; 1440p desktops usually run at 125% or 150% scale.
+  To check: Windows scale %, then 100% scale, then windowed 720p / 1080p
+  and explicit Fullscreen from the launcher's Display screen.
+- **Heavy stutter, uneven frame times;** playable but hard. Unmeasured.
+  To separate: first-run shader/pipeline compilation (better on a second
+  run of the same area?) vs. pacing (monitor refresh rate not a multiple
+  of 30, G-SYNC state) vs. a CPU stall.
+- **Keyboard:** only ollies and spins, no tricks. Probably the keyboard
+  map lacks the trick buttons, or it isn't documented. Use an Xbox
+  controller for the measured runs, and find the keyboard map.
+- **Image quality:** shimmering, no AA, no visible resolution increase;
+  shadows under the hair look pixelated. Probably the original 720p-class
+  rendering and shadow maps, not a bug. A resolution-scale / AA option
+  would be a feature request, not part of the report.
+
 ## Task 2 (later): fix "in-level cutscenes run 3–5x too fast uncapped"
 - Upstream analysis: the only variable is the guest frame rate. Uncapped,
   the game runs at about 200 fps and the in-level cutscene update advances
