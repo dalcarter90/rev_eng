@@ -85,7 +85,7 @@ Local kit: `C:\rea-work\project8\kit` (`capture-session.ps1`,
   empty in `param()` defaults when run with `powershell -File`, so
   `Join-Path` failed. Set path defaults in the script body instead.
 
-### Run 1 (first impressions, 2026-10-26; no numbers yet)
+### Run 1 (first impressions, 2026-10-25 evening local)
 Disc accepted, setup worked, game reached Free Skate (played as Nyjah
 Huston). 2560x1440 desktop, launcher defaults (cap on, borderless
 fullscreen at desktop size).
@@ -103,10 +103,41 @@ fullscreen at desktop size).
 - **Keyboard:** only ollies and spins, no tricks. Probably the keyboard
   map lacks the trick buttons, or it isn't documented. Use an Xbox
   controller for the measured runs, and find the keyboard map.
+- **Capture `freeskate-capped`, 300 s, during that session** (PresentMon on
+  the game process, `MsBetweenPresents`): 26,996 presents, 89.99 per
+  second; mean and p50 11.11 ms, p95 11.22, p99 11.33; none over 40 ms.
+  CPU: 31.3% average total (max 50%) on 12 logical cores; the game used
+  2.52 cores on average (Deck under Linux: about 2.23).
+  - The host presents at a rock-steady 90 Hz while the game is capped
+    at 30, so each game frame is presented about 3 times. PresentMon counts
+    presents, not new game frames, so this capture **can't see the
+    stutter**: a late game frame shows as 4 presents, then 2, with even
+    present timing. Why 90 Hz: unknown; check the monitor's refresh rate
+    (a 180 Hz panel presenting every second refresh would give 90).
+  - Game-frame timing needs the game's own counters (below).
 - **Image quality:** shimmering, no AA, no visible resolution increase;
   shadows under the hair look pixelated. Probably the original 720p-class
   rendering and shadow maps, not a bug. A resolution-scale / AA option
   would be a feature request, not part of the report.
+
+### Upstream tooling (from the v0.3.0 source, commit c8c21e2)
+- Launcher Display "frame-rate cap" is the runtime's `--vsync` flag (guest
+  vblank at the display rate when on, 1 ms when off). "Performance" adds
+  17 runtime flags (`Settings::PerformanceFlags()` in
+  `src/launcher/src/settings.cpp`). The launcher always passes
+  `--mnk_mode=true` (keyboard input is disabled without it) and
+  `--gpu_plugin=xenos`, and starts the game through `thps_p8_launch`.
+- `--perf_log_csv=<path>` makes the game write `frames.csv`: one row per
+  game frame with `frame_time_us`, draw counts and pipeline/texture cache
+  misses. That's the right tool for the stutter (and pipeline misses test
+  the shader-compilation theory). The launcher has no way to add extra
+  flags, so: start the game normally, read its command line
+  (`Get-CimInstance Win32_Process`), quit, then run `thps_p8_launch` with
+  that command line plus the flag.
+- F1 opens a debug panel (live frame time, fps, draws, cache misses, where
+  the log and CSV go). It adds UI work every frame, so not during a
+  measured run.
+- F5 toggles native residency (one of the Performance paths).
 
 ## Task 2 (later): fix "in-level cutscenes run 3–5x too fast uncapped"
 - Upstream analysis: the only variable is the guest frame rate. Uncapped,
